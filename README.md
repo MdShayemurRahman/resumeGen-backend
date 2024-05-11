@@ -1,1 +1,1 @@
-# resumeGen-backend
+# ResumeGen-backend
