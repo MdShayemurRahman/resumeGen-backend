@@ -1,79 +1,22 @@
 // routes/cvRoutes.js
 
 import express from 'express';
+import mongoose from 'mongoose';
 import CV from '../models/CV.js';
-// import { createCV } from '../controllers/cvController.js';
 
 const cvRouter = express.Router();
-
-// cvRouter.post('/cv', async (req, res) => {
-//   try {
-//     const { user, headline, phone, skills, education, projects, experience } =
-//       req.body;
-//     const newCV = new CV({
-//       user,
-//       headline,
-//       phone,
-//       skills: skills ? skills : [],
-//       education: education ? education : [],
-//       projects: projects ? projects : [],
-//       experience: experience ? experience : [],
-//     });
-//     const savedCV = await newCV.save();
-//     res.status(201).json(savedCV);
-//   } catch (error) {
-//     console.error('Error creating CV:', error);
-//     res.status(500).json({ message: 'Failed to create CV' });
-//   }
-// });
-
-cvRouter.post('/cv', async (req, res) => {
-  try {
-    const { user, headline, phone, skills, education, projects, experience } =
-      req.body;
-
-    // Check if a CV already exists for the user
-    const existingCV = await CV.findOne({ user });
-
-    // If a CV already exists, update it; otherwise, create a new one
-    if (existingCV) {
-      existingCV.headline = headline;
-      existingCV.phone = phone;
-      existingCV.skills = skills || [];
-      existingCV.education = education || [];
-      existingCV.projects = projects || [];
-      existingCV.experience = experience || [];
-      const updatedCV = await existingCV.save();
-      res.status(200).json(updatedCV);
-    } else {
-      const newCV = new CV({
-        user,
-        headline,
-        phone,
-        skills: skills || [],
-        education: education || [],
-        projects: projects || [],
-        experience: experience || [],
-      });
-      const savedCV = await newCV.save();
-      res.status(201).json(savedCV);
-    }
-  } catch (error) {
-    console.error('Error creating or updating CV:', error);
-    res.status(500).json({ message: 'Failed to create or update CV' });
-  }
-});
-
 
 cvRouter.get('/cv/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
-    console.log(req.params);
+    console.log(req.session);
 
-    const userCV = await CV.findOne({ user: userId });
+    const userCV = await CV.findOne({ user: userId }).populate('user');
+
     if (!userCV) {
       return res.status(404).json({ message: 'CV not found' });
     }
+
     res.status(200).json(userCV);
   } catch (error) {
     console.error('Error retrieving CV:', error);
@@ -81,24 +24,39 @@ cvRouter.get('/cv/:userId', async (req, res) => {
   }
 });
 
-cvRouter.put('/cv/:userId', async (req, res) => {
+cvRouter.patch('/cv/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
-    const updatedCVData = req.body;
-    const updatedCV = await CV.findOneAndUpdate(
-      { user: userId },
-      updatedCVData,
-      { new: true }
-    );
-    if (!updatedCV) {
+    const { headline, phone, skills, education, projects, experience } =
+      req.body;
+
+    // Ensure the userId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).send('Invalid user ID');
+    }
+
+    // Find the CV by user ID
+    const existingCV = await CV.findOne({ user: userId });
+    if (!existingCV) {
       return res.status(404).json({ message: 'CV not found' });
     }
+
+    // Update the existing CV with the new data
+    existingCV.headline = headline || existingCV.headline;
+    existingCV.phone = phone || existingCV.phone;
+    existingCV.skills = skills || existingCV.skills;
+    existingCV.education = education || existingCV.education;
+    existingCV.projects = projects || existingCV.projects;
+    existingCV.experience = experience || existingCV.experience;
+
+    const updatedCV = await existingCV.save();
     res.status(200).json(updatedCV);
   } catch (error) {
     console.error('Error updating CV:', error);
     res.status(500).json({ message: 'Failed to update CV' });
   }
 });
+
 
 cvRouter.delete('/cv/:userId', async (req, res) => {
   try {

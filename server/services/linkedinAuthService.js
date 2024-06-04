@@ -1,6 +1,7 @@
 import axios from 'axios';
 import config from '../config/config.js';
 import User from '../models/User.js';
+import CV from '../models/CV.js';
 
 const linkedinAuthUrl = 'https://www.linkedin.com/oauth/v2/authorization';
 const linkedinTokenUrl = 'https://www.linkedin.com/oauth/v2/accessToken';
@@ -8,7 +9,7 @@ const linkedinProfileUrl = 'https://api.linkedin.com/v2/me';
 const linkedinUserInfoUrl = 'https://api.linkedin.com/v2/userinfo';
 
 const linkedinAuthService = {
-  initiateAuth: (req, res) => {
+  initiateAuth: (_, res) => {
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: config.LINKEDIN_CLIENT_ID,
@@ -64,22 +65,34 @@ const linkedinAuthService = {
         linkedinURL: `https://www.linkedin.com/in/${profileResponse.data.vanityName}`,
       };
 
-      const existingUser = await User.findOne({
-        email: userProfile.email,
-      });
+      // Find existing user by email
+      let existingUser = await User.findOne({ email: userProfile.email });
+
       if (existingUser) {
-        // Update existing user
-        Object.assign(existingUser, userProfile);
+        // Update existing user profile
+        existingUser.set(userProfile);
         await existingUser.save();
       } else {
         // Create a new user
-        const newUser = new User(userProfile);
-        await newUser.save();
+        existingUser = new User(userProfile);
+        await existingUser.save();
+      }
+
+      // Check if a CV exists for the user
+      let cvExists = await CV.exists({ user: existingUser._id });
+
+      if (!cvExists) {
+        // Create a new CV for the user
+        const newCV = new CV({
+          user: existingUser._id,
+          headline: userProfile.headline,
+        });
+        await newCV.save();
       }
 
       if (res && userProfile) {
-        const queryString = new URLSearchParams(userProfile).toString();
-        const redirectUrl = `http://localhost:3000/profile?${queryString}`;
+        req.session.user = existingUser;
+        const redirectUrl = `http://localhost:3000/profile/${existingUser._id}`;
         res.redirect(redirectUrl);
         return;
       }

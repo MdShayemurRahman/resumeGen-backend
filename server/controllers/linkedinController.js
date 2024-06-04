@@ -12,3 +12,12 @@ export const handleAuthCallback = async (req, res) => {
     res.status(500).send('Authentication failed');
   }
 };
+
+export const handleLogOut = (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Error during session destruction:', err);
+    }
+    res.clearCookie('connect.sid');
+  });
+};
