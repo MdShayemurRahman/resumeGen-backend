@@ -20,14 +20,11 @@ const linkedinAuthService = {
 
     res.redirect(`${linkedinAuthUrl}?${params.toString()}`);
   },
-
   handleAuthCallback: async (req, res) => {
     const { code } = req.query;
-
     if (!code) {
       return res.status(400).send('Authorization code missing');
     }
-
     try {
       const tokenResponse = await axios.post(linkedinTokenUrl, null, {
         params: {
@@ -41,22 +38,17 @@ const linkedinAuthService = {
           'Content-Type': 'application/json',
         },
       });
-
       const { access_token } = tokenResponse.data;
-
       const profileResponse = await axios.get(linkedinProfileUrl, {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
       });
-
       const userInfoResponse = await axios.get(linkedinUserInfoUrl, {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
       });
-
-      // Get user data
       const userProfile = {
         fullName: userInfoResponse.data.name,
         headline: profileResponse.data.headline.localized.en_US,
@@ -64,25 +56,17 @@ const linkedinAuthService = {
         email: userInfoResponse.data ? userInfoResponse.data.email : null,
         linkedinURL: `https://www.linkedin.com/in/${profileResponse.data.vanityName}`,
       };
-
-      // Find existing user by email
       let existingUser = await User.findOne({ email: userProfile.email });
-
       if (existingUser) {
-        // Update existing user profile
         existingUser.set(userProfile);
         await existingUser.save();
       } else {
-        // Create a new user
         existingUser = new User(userProfile);
         await existingUser.save();
       }
 
-      // Check if a CV exists for the user
       let cvExists = await CV.exists({ user: existingUser._id });
-
       if (!cvExists) {
-        // Create a new CV for the user
         const newCV = new CV({
           user: existingUser._id,
           headline: userProfile.headline,
@@ -90,8 +74,6 @@ const linkedinAuthService = {
         await newCV.save();
       }
       req.session.user = existingUser;
-
-      
 
       if (res && userProfile) {
         const redirectUrl = `${process.env.FRONTEND_URL}/profile/${existingUser._id}`;

@@ -22,3 +22,10 @@ export const handleLogOut = (req, res) => {
   });
 };
 
+export const handleCheckAuth = (req, res) => {
+  if (req.session.user) {
+    res.status(200).json({ isAuthenticated: true });
+  } else {
+    res.status(200).json({ isAuthenticated: false });
+  }
+};

@@ -3,6 +3,7 @@ import {
   initiateAuth,
   handleAuthCallback,
   handleLogOut,
+  handleCheckAuth,
 } from '../controllers/linkedinController.js';
 
 const linkedinRouter = express.Router();
@@ -10,12 +11,6 @@ const linkedinRouter = express.Router();
 linkedinRouter.get('/linkedin', initiateAuth);
 linkedinRouter.get('/linkedin/callback', handleAuthCallback);
 linkedinRouter.post('/logout', handleLogOut);
-linkedinRouter.get('/checkAuth', (req, res) => {
-  if (req.session.user) {
-    res.status(200).json({ isAuthenticated: true });
-  } else {
-    res.status(200).json({ isAuthenticated: false });
-  }
-});
+linkedinRouter.get('/checkAuth', handleCheckAuth);
 
 export default linkedinRouter;
