@@ -89,10 +89,12 @@ const linkedinAuthService = {
         });
         await newCV.save();
       }
+      req.session.user = existingUser;
+
+      
 
       if (res && userProfile) {
-        req.session.user = existingUser;
-        const redirectUrl = `http://localhost:3000/profile/${existingUser._id}`;
+        const redirectUrl = `${process.env.FRONTEND_URL}/profile/${existingUser._id}`;
         res.redirect(redirectUrl);
         return;
       }

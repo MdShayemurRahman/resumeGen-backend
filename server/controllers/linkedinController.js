@@ -18,6 +18,7 @@ export const handleLogOut = (req, res) => {
     if (err) {
       console.error('Error during session destruction:', err);
     }
-    res.clearCookie('connect.sid');
+    res.clearCookie().status(200).send('Logged out successfully');
   });
 };
+

@@ -22,10 +22,10 @@ const configureMiddleware = (app) => {
       saveUninitialized: false,
       store: store,
       cookie: {
-        maxAge: 5 * 60 * 1000, // 5 minutes
-        secure: false, // Set to true in production
+        maxAge: 60 * 60 * 1000,
+        secure: false,
         httpOnly: true,
-        sameSite: 'lax', // Adjust as needed
+        sameSite: 'Strict',
       },
     })
   );

@@ -8,7 +8,7 @@ const app = express();
 
 configureMiddleware(app);
 
-app.use(linkedinRouter);
-app.use(cvRouter);
+app.use('/auth', linkedinRouter);
+app.use('/cv', cvRouter);
 
 export default app;
