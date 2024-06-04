@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "start": "node ./server/server.js",
     "server": "nodemon ./server/server.js",
     "test": "jest"
   },

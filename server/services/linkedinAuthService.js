@@ -20,6 +20,7 @@ const linkedinAuthService = {
 
     res.redirect(`${linkedinAuthUrl}?${params.toString()}`);
   },
+
   handleAuthCallback: async (req, res) => {
     const { code } = req.query;
     if (!code) {
