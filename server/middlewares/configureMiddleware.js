@@ -24,7 +24,7 @@ const configureMiddleware = (app) => {
       cookie: {
         maxAge: 60 * 60 * 1000,
         //secure: false,
-        secure: true,
+        secure: false,
         httpOnly: true,
         sameSite: 'Strict',
       },
