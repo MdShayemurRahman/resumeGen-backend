@@ -8,6 +8,10 @@ const app = express();
 
 configureMiddleware(app);
 
+app.get('/test', (req, res) => {
+  res.json({ message: 'server works!' });
+});
+
 app.use('/auth', linkedinRouter);
 app.use('/cv', cvRouter);
 
