@@ -26,7 +26,7 @@ const configureMiddleware = (app) => {
         // secure: false,
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        sameSite: 'Strict',
+        sameSite: 'None',
       },
     })
   );
