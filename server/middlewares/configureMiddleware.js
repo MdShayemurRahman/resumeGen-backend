@@ -23,9 +23,9 @@ const configureMiddleware = (app) => {
       // store: store,
       cookie: {
         maxAge: 60 * 60 * 1000,
-        //secure: false,
-        secure: false,
-        httpOnly: false,
+        // secure: false,
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
         sameSite: 'Strict',
       },
     })
