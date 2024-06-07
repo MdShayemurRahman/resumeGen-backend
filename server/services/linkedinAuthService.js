@@ -1,4 +1,5 @@
 import axios from 'axios';
+
 import config from '../config/config.js';
 import User from '../models/User.js';
 import CV from '../models/CV.js';
@@ -17,15 +18,12 @@ const linkedinAuthService = {
       state: config.SESSION_STATE,
       scope: 'openid profile email r_basicprofile',
     });
-
     res.redirect(`${linkedinAuthUrl}?${params.toString()}`);
   },
 
   handleAuthCallback: async (req, res) => {
     const { code } = req.query;
-    if (!code) {
-      return res.status(400).send('Authorization code missing');
-    }
+    if (!code) return res.status(400).send('Authorization code missing');
     try {
       const tokenResponse = await axios.post(linkedinTokenUrl, null, {
         params: {
@@ -35,20 +33,14 @@ const linkedinAuthService = {
           client_secret: config.LINKEDIN_CLIENT_SECRET,
           redirect_uri: config.LINKEDIN_CALLBACK_URL,
         },
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       });
       const { access_token } = tokenResponse.data;
       const profileResponse = await axios.get(linkedinProfileUrl, {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
+        headers: { Authorization: `Bearer ${access_token}`},
       });
       const userInfoResponse = await axios.get(linkedinUserInfoUrl, {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
+        headers: { Authorization: `Bearer ${access_token}`},
       });
       const userProfile = {
         fullName: userInfoResponse.data.name,
@@ -65,7 +57,6 @@ const linkedinAuthService = {
         existingUser = new User(userProfile);
         await existingUser.save();
       }
-
       let cvExists = await CV.exists({ user: existingUser._id });
       if (!cvExists) {
         const newCV = new CV({
@@ -75,9 +66,8 @@ const linkedinAuthService = {
         await newCV.save();
       }
       req.session.user = existingUser;
-
       if (res && userProfile) {
-        const redirectUrl = `${process.env.FRONTEND_URL}/profile/${existingUser._id}`;
+        const redirectUrl = `${config.FRONTEND_URL}/profile/${existingUser._id}`;
         res.redirect(redirectUrl);
         return;
       }

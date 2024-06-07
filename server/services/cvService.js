@@ -25,11 +25,3 @@ export const updateCv = async (userId, cvData) => {
   return updatedCV;
 };
 
-export const deleteCv = async (userId) => {
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    throw new Error('Invalid user ID');
-  }
-
-  const deletedCV = await CV.findOneAndDelete({ user: userId });
-  return deletedCV;
-};
