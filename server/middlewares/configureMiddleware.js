@@ -6,6 +6,7 @@ import session from 'express-session';
 import config from '../config/config.js';
 
 const configureMiddleware = (app) => {
+  app.options('*', cors({ origin: config.FRONTEND_URL, credentials: true }));
   app.use(cors({ origin: config.FRONTEND_URL, credentials: true }));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -28,6 +29,7 @@ const configureMiddleware = (app) => {
         httpOnly: true,
         sameSite: 'None',
         // sameSite: 'Strict',
+        __Secure__: true,
       },
     })
   );
