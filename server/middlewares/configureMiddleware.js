@@ -23,10 +23,11 @@ const configureMiddleware = (app) => {
       // store: store,
       cookie: {
         maxAge: 60 * 60 * 1000,
-        // secure: false,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
+        // secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: 'None',
+        // sameSite: 'Strict',
       },
     })
   );
