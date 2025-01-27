@@ -42,8 +42,7 @@ const configureMiddleware = (app) => {
       name: 'sessionId',
     })
   );
-
-  // Debug middleware to log session data
+  
   app.use((req, res, next) => {
     console.log('Session ID:', req.sessionID);
     console.log('Session Data:', req.session);
