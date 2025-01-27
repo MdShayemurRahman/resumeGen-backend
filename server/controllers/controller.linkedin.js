@@ -1,4 +1,4 @@
-import linkedinAuthService from '../services/linkedinAuthService.js';
+import linkedinAuthService from '../services/linkedinAuthServices.js';
 
 export const initiateAuth = (req, res) => {
   linkedinAuthService.initiateAuth(req, res);

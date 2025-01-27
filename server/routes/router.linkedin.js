@@ -4,7 +4,7 @@ import {
   handleAuthCallback,
   handleLogOut,
   handleCheckAuth,
-} from '../controllers/linkedinController.js';
+} from '../controllers/controller.linkedin.js';
 
 const linkedinRouter = express.Router();
 

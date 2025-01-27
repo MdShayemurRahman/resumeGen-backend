@@ -2,7 +2,7 @@ import express from 'express';
 import {
   getCvByUserId,
   updateCvByUserId,
-} from '../controllers/cvController.js';
+} from '../controllers/controller.cv.js';
 
 const cvRouter = express.Router();
 

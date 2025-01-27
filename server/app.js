@@ -1,28 +1,45 @@
 import express from 'express';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
 
-import configureMiddleware from './middlewares/configureMiddleware.js';
-import linkedinRouter from './routes/linkedinRoutes.js';
-import cvRouter from './routes/cvRoutes.js';
+import configureMiddleware from './middlewares/config.middleware.js';
+import linkedinRouter from './routes/router.linkedin.js';
+import cvRouter from './routes/router.cv.js';
+import { errorHandler } from './middlewares/error.middleware.js';
+import { isAuthenticated } from './middlewares/auth.middleware.js';
 
 const app = express();
 
+// Security middleware
+app.use(helmet());
+app.use(mongoSanitize());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
+// Configure basic middleware
 configureMiddleware(app);
 
-app.get('/test', (_, res) => {
-  res.json({ message: 'server works!' });
+// Health check route
+app.get('/health', (_, res) => {
+  res.status(200).json({ status: 'healthy' });
 });
 
+// API routes
 app.use('/auth', linkedinRouter);
+app.use('/cv', cvRouter); 
 
-// const isAuthenticated = (req, res, next) => {
-//   if (req.session.user) {
-//     res.status(200).json({ isAuthenticated: true });
-//     next();
-//   } else {
-//     res.status(200).json({ isAuthenticated: false });
-//   }
-// };
+// Error handling
+app.use(errorHandler);
 
-app.use('/cv', cvRouter);
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
 
 export default app;
