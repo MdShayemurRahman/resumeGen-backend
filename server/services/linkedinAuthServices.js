@@ -13,62 +13,45 @@ const LINKEDIN_API = {
 
 const linkedinAuthService = {
   initiateAuth: (req, res) => {
-    // Generate a random state
+    // Generate a random state for CSRF protection
     const state = Math.random().toString(36).substring(7);
 
-    // Store state in session
+    // Store the state in session
     req.session.linkedinState = state;
 
-    // Force session save
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session save error:', err);
-        return res.status(500).send('Session error');
-      }
-
-      const params = new URLSearchParams({
-        response_type: 'code',
-        client_id: config.LINKEDIN_CLIENT_ID,
-        redirect_uri: config.LINKEDIN_CALLBACK_URL,
-        state: state,
-        scope: 'openid profile email',
-      });
-
-      // Debug logging
-      console.log('Auth Initiated:');
-      console.log('Generated state:', state);
-      console.log('Session ID:', req.sessionID);
-      console.log('Session state:', req.session.linkedinState);
-
-      res.redirect(`${LINKEDIN_API.AUTH_URL}?${params.toString()}`);
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: config.LINKEDIN_CLIENT_ID,
+      redirect_uri: config.LINKEDIN_CALLBACK_URL,
+      state: state,
+      scope: 'openid profile email r_basicprofile',
     });
+
+    // Log for debugging
+    console.log('Generated state:', state);
+    console.log('Auth URL:', `${LINKEDIN_API.AUTH_URL}?${params.toString()}`);
+
+    res.redirect(`${LINKEDIN_API.AUTH_URL}?${params.toString()}`);
   },
 
   handleAuthCallback: async (req, res) => {
     const { code, state } = req.query;
-
-    // Debug logging
-    console.log('Callback received:');
+    // Log for debugging
     console.log('Received state:', state);
-    console.log('Session ID:', req.sessionID);
-    console.log('Session state:', req.session.linkedinState);
+    console.log('Stored state:', req.session.linkedinState);
 
-    // More lenient state check for debugging
-    if (!state || !req.session.linkedinState) {
-      console.error('State or session state missing');
+    // Verify state parameter
+    if (!state || state !== req.session.linkedinState) {
+      console.error('State mismatch or missing');
       console.error('Received state:', state);
       console.error('Session state:', req.session.linkedinState);
-      return res.status(400).send('State parameter missing');
-    }
-
-    if (state !== req.session.linkedinState) {
-      console.error('State mismatch:');
-      console.error('Received:', state);
-      console.error('Expected:', req.session.linkedinState);
       return res.status(400).send('Invalid state parameter');
     }
 
-    // Rest of your callback handling code...
+    if (!code) {
+      return res.status(400).send('Authorization code missing');
+    }
+
     try {
       const tokenResponse = await axios.post(LINKEDIN_API.TOKEN_URL, null, {
         params: {
@@ -83,16 +66,51 @@ const linkedinAuthService = {
         },
       });
 
-      // ... rest of your existing code ...
+      const { access_token } = tokenResponse.data;
 
-      // Clear the linkedinState after successful use
-      delete req.session.linkedinState;
-      await new Promise((resolve, reject) => {
-        req.session.save((err) => {
-          if (err) reject(err);
-          resolve();
+      const [profileResponse, userInfoResponse] = await Promise.all([
+        axios.get(LINKEDIN_API.PROFILE_URL, {
+          headers: { Authorization: `Bearer ${access_token}` },
+        }),
+        axios.get(LINKEDIN_API.USER_INFO_URL, {
+          headers: { Authorization: `Bearer ${access_token}` },
+        }),
+      ]);
+
+      const userProfile = {
+        fullName: userInfoResponse.data.name,
+        headline: profileResponse.data.headline?.localized?.en_US,
+        image: userInfoResponse.data.picture,
+        email: userInfoResponse.data.email,
+        linkedinURL: profileResponse.data.vanityName
+          ? `https://www.linkedin.com/in/${profileResponse.data.vanityName}`
+          : null,
+      };
+
+      let existingUser = await User.findOne({ email: userProfile.email });
+
+      if (existingUser) {
+        existingUser.set(userProfile);
+        await existingUser.save();
+      } else {
+        existingUser = new User(userProfile);
+        await existingUser.save();
+      }
+
+      let cvExists = await CV.exists({ user: existingUser._id });
+      if (!cvExists) {
+        const newCV = new CV({
+          user: existingUser._id,
+          headline: userProfile.headline,
         });
-      });
+        await newCV.save();
+      }
+
+      // Store user in session
+      req.session.user = existingUser;
+
+      // Clear the linkedinState from session as it's no longer needed
+      delete req.session.linkedinState;
 
       const redirectUrl = `${config.FRONTEND_URL}/profile/${existingUser._id}`;
       res.redirect(redirectUrl);
