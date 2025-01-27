@@ -9,7 +9,7 @@ jest.mock('../services/linkedinAuthService.js');
 jest.mock('../models/User.js');
 jest.mock('../models/CV.js');
 
-const userId = '665f2a5fda142cae42082ad7';
+const userId = '6797f2182672b0761e36cd45';
 describe('LinkedIn Authentication', () => {
   beforeEach(() => {
     jest.clearAllMocks();

@@ -27,11 +27,11 @@ const configureMiddleware = (app) => {
         crypto: {
           secret: config.SESSION_SECRET,
         },
+        autoRemove: 'native',
       }),
       cookie: {
         maxAge: 60 * 60 * 1000, // 1 hour
         secure: process.env.NODE_ENV === 'production',
-        secure: false,
         httpOnly: true,
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       },

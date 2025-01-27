@@ -11,33 +11,26 @@ import { isAuthenticated } from './middlewares/auth.middleware.js';
 
 const app = express();
 
-// Security middleware
 app.use(helmet());
 app.use(mongoSanitize());
 
-// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
 });
 app.use(limiter);
 
-// Configure basic middleware
 configureMiddleware(app);
 
-// Health check route
 app.get('/health', (_, res) => {
   res.status(200).json({ status: 'healthy' });
 });
 
-// API routes
 app.use('/auth', linkedinRouter);
 app.use('/cv', cvRouter); 
 
-// Error handling
 app.use(errorHandler);
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
