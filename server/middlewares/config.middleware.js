@@ -36,13 +36,11 @@ const configureMiddleware = (app) => {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        domain:
-          process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined,
       },
       name: 'sessionId',
     })
   );
-  
+
   app.use((req, res, next) => {
     console.log('Session ID:', req.sessionID);
     console.log('Session Data:', req.session);
