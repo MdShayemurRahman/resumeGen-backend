@@ -115,6 +115,7 @@ const linkedinAuthService = {
 
       const userProfile = {
         fullName: userInfoResponse.data.name,
+        headline: profileResponse.data.headline.localized.en_US,
         image: userInfoResponse.data.picture,
         email: userInfoResponse.data.email,
         linkedinURL: profileResponse.data.vanityName
@@ -142,6 +143,7 @@ const linkedinAuthService = {
         console.log('Creating new CV');
         const newCV = new CV({
           user: existingUser._id,
+          headline: userProfile.headline,
         });
         await newCV.save();
       }
