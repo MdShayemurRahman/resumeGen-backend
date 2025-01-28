@@ -13,13 +13,38 @@ export const handleAuthCallback = async (req, res) => {
   }
 };
 
-export const handleLogOut = (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error('Error during session destruction:', err);
-    }
-    res.clearCookie().status(200).send('Logged out successfully');
-  });
+export const handleLogout = async (req, res) => {
+  try {
+    // Clear the session from MongoDB
+    await new Promise((resolve, reject) => {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+    });
+
+    // Clear the session cookie
+    res.clearCookie('sessionId', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Logged out successfully',
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error during logout',
+    });
+  }
 };
 
 export const handleCheckAuth = (req, res) => {

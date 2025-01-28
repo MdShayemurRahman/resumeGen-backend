@@ -7,7 +7,6 @@ import configureMiddleware from './middlewares/config.middleware.js';
 import linkedinRouter from './routes/router.linkedin.js';
 import cvRouter from './routes/router.cv.js';
 import { errorHandler } from './middlewares/error.middleware.js';
-import { isAuthenticated } from './middlewares/auth.middleware.js';
 
 const app = express();
 
@@ -21,6 +20,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 configureMiddleware(app);
+// configureSecurityMiddleware(app);
 
 app.get('/health', (_, res) => {
   res.status(200).json({ status: 'healthy' });
@@ -32,7 +32,10 @@ app.use('/cv', cvRouter);
 app.use(errorHandler);
 
 app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  res.status(404).json({
+    status: 'fail',
+    message: 'Route not found',
+  });
 });
 
 export default app;

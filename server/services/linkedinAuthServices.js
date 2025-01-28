@@ -64,7 +64,6 @@ const linkedinAuthService = {
       return res.status(400).send('Authorization code missing');
     }
 
-    // Temporary more permissive state check for debugging
     if (state) {
       console.log('State verification:', {
         received: state,
@@ -72,14 +71,6 @@ const linkedinAuthService = {
         matches: state === req.session.linkedinState,
       });
     }
-
-    // Verify state parameter
-    // if (!state || state !== req.session.linkedinState) {
-    //   console.error('State mismatch or missing');
-    //   console.error('Received state:', state);
-    //   console.error('Session state:', req.session.linkedinState);
-    //   return res.status(400).send('Invalid state parameter');
-    // }
 
     try {
       console.log('Requesting access token...');
