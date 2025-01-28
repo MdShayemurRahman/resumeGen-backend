@@ -16,6 +16,10 @@ const CVSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    summery: {
+      type: String,
+      trim: true,
+    },
     githubURL: {
       type: String,
       trim: true,
