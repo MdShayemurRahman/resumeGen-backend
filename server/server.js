@@ -1,13 +1,11 @@
 import mongoose from 'mongoose';
-
+import 'dotenv/config';
 import app from './app.js';
 
 const port = process.env.PORT || 5000;
 
-const mongoURL = process.env.DB_URL;
-
 mongoose
-  .connect(mongoURL)
+  .connect(process.env.DB_URL)
   .then(() => {
     console.log('MongoDB connected successfully');
   })

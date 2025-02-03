@@ -5,8 +5,10 @@ import mongoSanitize from 'express-mongo-sanitize';
 
 import configureMiddleware from './middlewares/config.middleware.js';
 import linkedinRouter from './routes/router.linkedin.js';
-import cvRouter from './routes/router.cv.js';
+import resumeRouter from './routes/router.resume.js';
 import { errorHandler } from './middlewares/error.middleware.js';
+import userRouter from './routes/router.auth.js';
+import { testEmailConfig } from './config/email.config.js';
 
 const app = express();
 
@@ -20,18 +22,24 @@ const limiter = rateLimit({
 app.use(limiter);
 
 configureMiddleware(app);
-// configureSecurityMiddleware(app);
 
 app.get('/health', (_, res) => {
   res.status(200).json({ status: 'healthy' });
 });
+app.use('/auth/linkedin', linkedinRouter);
+app.use('/auth', userRouter);
+app.use('/resumes', resumeRouter);
 
-app.use('/auth', linkedinRouter);
-app.use('/cv', cvRouter); 
+testEmailConfig().then((isConfigured) => {
+  if (isConfigured) {
+    console.log('Email service ready');
+  } else {
+    console.error('Email service not configured properly');
+  }
+});
 
 app.use(errorHandler);
-
-app.use((req, res) => {
+app.use((_, res) => {
   res.status(404).json({
     status: 'fail',
     message: 'Route not found',

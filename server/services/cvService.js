@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import CV from '../models/CV.js';
+// import CV from '../models/CV.js';
 
 export const findCvByUserId = async (userId) => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {

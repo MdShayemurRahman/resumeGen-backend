@@ -2,12 +2,15 @@ import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
-import config from '../config/config.js';
 
 const configureMiddleware = (app) => {
-  // CORS configuration with credentials
+
+   if (!process.env.DB_URL) {
+     throw new Error('DB_URL is not defined in environment variables');
+   }
+
   const corsOptions = {
-    origin: config.FRONTEND_URL.split(',').map((url) => url.trim()),
+    origin: process.env.FRONTEND_URL,
     credentials: true,
     optionsSuccessStatus: 200,
   };
@@ -15,24 +18,22 @@ const configureMiddleware = (app) => {
   app.use(cors(corsOptions));
   app.options('*', cors(corsOptions));
 
-  // Body parsing
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Session configuration
   app.use(
     session({
-      secret: config.SESSION_SECRET,
+      secret: process.env.SESSION_SECRET,
       resave: true,
       saveUninitialized: true,
       store: MongoStore.create({
-        mongoUrl: config.DB_URL,
-        ttl: 24 * 60 * 60, // 24 hours
+        mongoUrl: process.env.DB_URL,
+        ttl: 24 * 60 * 60, 
         autoRemove: 'native',
-        touchAfter: 24 * 3600, // time period in seconds
+        touchAfter: 24 * 3600, 
       }),
       cookie: {
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 24 * 60 * 60 * 1000, 
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
@@ -41,7 +42,7 @@ const configureMiddleware = (app) => {
     })
   );
 
-  app.use((req, res, next) => {
+  app.use((req, _, next) => {
     console.log('Session ID:', req.sessionID);
     console.log('Session Data:', req.session);
     next();

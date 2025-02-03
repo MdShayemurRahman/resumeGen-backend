@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-import config from '../config/config.js';
-import User from '../models/User.js';
-import CV from '../models/CV.js';
+// import config from '../config/config.js';
+// import User from '../models/User.js';
+// import CV from '../models/CV.js';
 
 const LINKEDIN_API = {
   AUTH_URL: 'https://www.linkedin.com/oauth/v2/authorization',
@@ -16,7 +16,6 @@ const linkedinAuthService = {
     try {
       const state = Math.random().toString(36).substring(7);
 
-      // Store the state in session
       req.session.linkedinState = state;
 
       await new Promise((resolve, reject) => {

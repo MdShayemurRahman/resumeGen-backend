@@ -1,0 +1,42 @@
+import express from 'express';
+import { validateRequest } from '../middlewares/validation.middleware.js';
+import { verifyToken } from '../middlewares/auth.middleware.js';
+import {
+  register,
+  login,
+  logout,
+  getProfile,
+  updateProfile,
+  changePassword,
+  forgotPassword,
+  resetPassword,
+  refreshToken,
+  checkAuth,
+} from '../controllers/auth/controller.auth.js';
+
+const userRouter = express.Router();
+
+// Public routes
+userRouter.post('/register', validateRequest('register'), register);
+userRouter.post('/login', validateRequest('login'), login);
+userRouter.post('/forgot-password', validateRequest('email'), forgotPassword);
+userRouter.post(
+  '/reset-password/:token',
+  validateRequest('resetPassword'),
+  resetPassword
+);
+
+// Protected routes (require authentication)
+userRouter.use(verifyToken);
+userRouter.get('/profile', getProfile);
+userRouter.put('/profile', validateRequest('updateProfile'), updateProfile);
+userRouter.post(
+  '/change-password',
+  validateRequest('changePassword'),
+  changePassword
+);
+userRouter.post('/logout', logout);
+userRouter.post('/refresh-token', refreshToken);
+userRouter.get('/check-auth', checkAuth);
+
+export default userRouter;

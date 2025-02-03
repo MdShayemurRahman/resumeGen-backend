@@ -1,16 +1,24 @@
+// routes/linkedin.router.js
 import express from 'express';
 import {
   initiateAuth,
   handleAuthCallback,
   handleLogout,
-  handleCheckAuth,
-} from '../controllers/controller.linkedin.js';
+  importLinkedInProfile,
+  checkLinkedInAuth,
+} from '../controllers/auth/controller.linkedin.js';
+import { verifyToken } from '../middlewares/auth.middleware.js';
 
 const linkedinRouter = express.Router();
 
-linkedinRouter.get('/linkedin', initiateAuth);
-linkedinRouter.get('/linkedin/callback', handleAuthCallback);
+// Public routes
+linkedinRouter.get('/', initiateAuth);
+linkedinRouter.get('/callback', handleAuthCallback);
+
+// Protected routes (require authentication)
+linkedinRouter.use(verifyToken);
 linkedinRouter.post('/logout', handleLogout);
-linkedinRouter.get('/checkAuth', handleCheckAuth);
+linkedinRouter.get('/profile/import', importLinkedInProfile);
+linkedinRouter.get('/check', checkLinkedInAuth);
 
 export default linkedinRouter;

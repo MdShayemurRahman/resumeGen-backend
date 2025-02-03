@@ -16,3 +16,9 @@ export class AuthenticationError extends Error {
     this.originalError = originalError;
   }
 }
+
+export const createError = (statusCode, message) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
