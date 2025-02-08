@@ -15,9 +15,9 @@ export const validateRequest = (type) => {
     try {
       switch (type) {
         case 'register':
-          const { email, password, firstName, lastName } = req.body;
+          const { email, password, name } = req.body;
 
-          if (!email || !password || !firstName || !lastName) {
+          if (!email || !password || !name) {
             throw createError(400, 'Please provide all required fields');
           }
           if (!validateEmail(email)) {
@@ -68,8 +68,8 @@ export const validateRequest = (type) => {
           break;
 
         case 'updateProfile':
-          if (!req.body.firstName || !req.body.lastName) {
-            throw createError(400, 'Please provide all required fields');
+          if (!req.body.name) {
+            throw createError(400, 'Name is required');
           }
           if (req.body.email && !validateEmail(req.body.email)) {
             throw createError(400, 'Please provide a valid email');

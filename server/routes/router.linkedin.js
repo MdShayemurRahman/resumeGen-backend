@@ -6,7 +6,7 @@ import {
   handleLogout,
   importLinkedInProfile,
   checkLinkedInAuth,
-} from '../controllers/auth/controller.linkedin.js';
+} from '../controllers/auth/controller.linkedinAuth.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 
 const linkedinRouter = express.Router();

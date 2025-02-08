@@ -1,21 +1,8 @@
-// import linkedinAuthService from '../../services/linkedinAuthServices.js';
-
-// export const initiateAuth = (req, res) => {
-//   linkedinAuthService.initiateAuth(req, res);
-// };
-
-// export const handleAuthCallback = async (req, res) => {
-//   try {
-//     await linkedinAuthService.handleAuthCallback(req, res);
-//   } catch (error) {
-//     console.error('Error during LinkedIn OAuth callback:', error);
-//     res.status(500).send('Authentication failed');
-//   }
-// };
-
+// controllers/auth/controller.linkedin.js
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import User from '../../models/User/user.model.js';
+import { createError } from '../../utils/error.util.js';
 
 const LINKEDIN_API = {
   AUTH_URL: 'https://www.linkedin.com/oauth/v2/authorization',
@@ -29,7 +16,6 @@ export const initiateAuth = async (req, res) => {
     const state = Math.random().toString(36).substring(7);
     req.session.linkedinState = state;
 
-    // Save session explicitly
     await new Promise((resolve, reject) => {
       req.session.save((err) => {
         if (err) {
@@ -75,14 +61,6 @@ export const handleAuthCallback = async (req, res) => {
     return res.status(400).send('Authorization code missing');
   }
 
-  if (state) {
-    console.log('State verification:', {
-      received: state,
-      stored: req.session.linkedinState,
-      matches: state === req.session.linkedinState,
-    });
-  }
-
   try {
     console.log('Requesting access token...');
     const tokenResponse = await axios.post(LINKEDIN_API.TOKEN_URL, null, {
@@ -99,10 +77,8 @@ export const handleAuthCallback = async (req, res) => {
     });
 
     const { access_token } = tokenResponse.data;
-    // const { access_token, refresh_token, expires_in } = tokenResponse.data;
     console.log('Access token received');
 
-    // Get user profile data
     console.log('Fetching user profile...');
     const [profileResponse, userInfoResponse] = await Promise.all([
       axios.get(LINKEDIN_API.PROFILE_URL, {
@@ -116,22 +92,24 @@ export const handleAuthCallback = async (req, res) => {
     console.log('Profile data received');
 
     const userProfile = {
-      firstName: userInfoResponse.data.given_name,
-      lastName: userInfoResponse.data.family_name,
+      name: userInfoResponse.data.name,
       email: userInfoResponse.data.email,
       linkedinId: profileResponse.data.id,
+      jobTitle:
+        profileResponse.data.headline?.localized?.en_US ||
+        profileResponse.data.headline ||
+        userInfoResponse.data.headline ||
+        '',
+      linkedinURL: profileResponse.data.vanityName
+        ? `https://www.linkedin.com/in/${profileResponse.data.vanityName}`
+        : null,
       authType: 'linkedin',
       profile: {
-        name: userInfoResponse.data.name,
+        bio: '',
         email: userInfoResponse.data.email,
         picture: userInfoResponse.data.picture,
       },
     };
-
-    console.log('User profile created:', { ...userProfile, email: '***' });
-
-    // Get user profile using the service
-    // const userProfile = await LinkedInService.getProfileData(access_token);
 
     // Find or create user
     let user = await User.findOne({ linkedinId: userProfile.linkedinId });
@@ -140,34 +118,22 @@ export const handleAuthCallback = async (req, res) => {
       // Check if email exists
       const existingUser = await User.findOne({ email: userProfile.email });
 
-      console.log('profile: ', profileResponse);
       if (existingUser) {
-        console.log('Updating existing user');
-        existingUser.set({
-          ...userProfile,
-          linkedinId: profileResponse.data,
-        });
-        user = await existingUser.save();
+        const updatedUser = await updateLinkedInProfile(
+          existingUser,
+          userProfile
+        );
+        user = updatedUser;
       } else {
-        console.log('Creating new user');
         user = await User.create({
           ...userProfile,
           isEmailVerified: true,
         });
       }
+    } else {
+      const updatedUser = await updateLinkedInProfile(user, userProfile);
+      user = updatedUser;
     }
-
-    console.log(user);
-
-    // Update LinkedIn tokens
-    // user.linkedinTokens = {
-    //   accessToken: access_token,
-    //   refreshToken: refresh_token,
-    //   expiresIn: expires_in,
-    //   issuedAt: new Date(),
-    // };
-
-    // await user.save();
 
     // Create JWT token
     const token = jwt.sign(
@@ -201,7 +167,7 @@ export const handleAuthCallback = async (req, res) => {
   }
 };
 
-export const handleLogout = async (req, res) => {
+export const handleLogout = async (_, res) => {
   try {
     res.clearCookie('token');
     res.status(200).json({ message: 'Logged out successfully' });
@@ -221,8 +187,7 @@ export const checkLinkedInAuth = async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        name: user.name,
         profile: user.profile,
       },
     });
@@ -235,38 +200,30 @@ export const checkLinkedInAuth = async (req, res) => {
 export const importLinkedInProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-
     if (!user.linkedinId) {
       throw createError(400, 'No LinkedIn account linked');
     }
 
     // Get fresh access token
     const accessToken = await LinkedInService.refreshAccessToken(user._id);
-
-    // Get updated profile data
     const profileData = await LinkedInService.getProfileData(accessToken);
 
     // Update user profile
-    user.firstName = profileData.firstName;
-    user.lastName = profileData.lastName;
-    user.profile = profileData.profile;
-
-    await user.save();
+    const updatedUser = await updateLinkedInProfile(user, profileData);
 
     res.status(200).json({
       message: 'Profile refreshed successfully',
       user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profile: user.profile,
+        id: updatedUser._id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        jobTitle: updatedUser.jobTitle,
+        profile: updatedUser.profile,
       },
     });
   } catch (error) {
     console.error('Profile import error:', error);
     if (error.response?.status === 401) {
-      // Token refresh failed, need to re-authenticate
       res.status(401).json({
         message: 'Please reconnect your LinkedIn account',
         needsReauth: true,
@@ -276,5 +233,32 @@ export const importLinkedInProfile = async (req, res) => {
         message: error.message || 'Error importing profile',
       });
     }
+  }
+};
+
+const updateLinkedInProfile = async (user, profileData) => {
+  try {
+    const updateData = {
+      name: profileData.name,
+      jobTitle: profileData.jobTitle || user.jobTitle,
+      profile: {
+        ...user.profile,
+        ...profileData.profile,
+      },
+    };
+
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      { $set: updateData },
+      {
+        new: true,
+        runValidators: true,
+        context: 'query',
+      }
+    );
+
+    return updatedUser;
+  } catch (error) {
+    throw error;
   }
 };

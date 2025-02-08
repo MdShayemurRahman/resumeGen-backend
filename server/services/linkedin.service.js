@@ -1,5 +1,6 @@
+// services/linkedin.service.js
 import axios from 'axios';
-import User from '../models/User/user.model';
+import User from '../models/User/user.model.js';
 
 const LINKEDIN_API = {
   AUTH_URL: 'https://www.linkedin.com/oauth/v2/authorization',
@@ -68,15 +69,18 @@ class LinkedInService {
       ]);
 
       return {
-        firstName: userInfoResponse.data.given_name,
-        lastName: userInfoResponse.data.family_name,
+        name: userInfoResponse.data.name,
         email: userInfoResponse.data.email,
         linkedinId: profileResponse.data.id,
+        jobTitle: profileResponse.data.headline?.localized?.en_US || '',
         profile: {
-          name: userInfoResponse.data.name,
+          bio: '',
           email: userInfoResponse.data.email,
           picture: userInfoResponse.data.picture,
         },
+        linkedinURL: profileResponse.data.vanityName
+          ? `https://www.linkedin.com/in/${profileResponse.data.vanityName}`
+          : null,
       };
     } catch (error) {
       console.error('Error fetching LinkedIn profile:', error);

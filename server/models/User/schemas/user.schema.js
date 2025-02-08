@@ -1,16 +1,10 @@
 // schemas/user.schema.js
 import mongoose from 'mongoose';
 
-// Basic Info Schema
 export const basicInfoSchema = {
-  firstName: {
+  name: {
     type: String,
-    required: [true, 'First name is required'],
-    trim: true,
-  },
-  lastName: {
-    type: String,
-    required: [true, 'Last name is required'],
+    required: [true, 'Name is required'],
     trim: true,
   },
   email: {
@@ -18,6 +12,11 @@ export const basicInfoSchema = {
     required: [true, 'Email is required'],
     unique: true,
     lowercase: true,
+    trim: true,
+  },
+  jobTitle: {
+    type: String,
+    default: '',
     trim: true,
   },
 };
@@ -74,10 +73,8 @@ export const securitySchema = {
   verificationTokenExpires: Date,
 };
 
-// Profile Schema
 export const profileSchema = {
   profile: {
-    title: String,
     bio: String,
     location: String,
     phoneNumber: String,

@@ -4,10 +4,9 @@ import session from 'express-session';
 import MongoStore from 'connect-mongo';
 
 const configureMiddleware = (app) => {
-
-   if (!process.env.DB_URL) {
-     throw new Error('DB_URL is not defined in environment variables');
-   }
+  if (!process.env.DB_URL) {
+    throw new Error('DB_URL is not defined in environment variables');
+  }
 
   const corsOptions = {
     origin: process.env.FRONTEND_URL,
@@ -28,12 +27,12 @@ const configureMiddleware = (app) => {
       saveUninitialized: true,
       store: MongoStore.create({
         mongoUrl: process.env.DB_URL,
-        ttl: 24 * 60 * 60, 
+        ttl: 24 * 60 * 60,
         autoRemove: 'native',
-        touchAfter: 24 * 3600, 
+        touchAfter: 24 * 3600,
       }),
       cookie: {
-        maxAge: 24 * 60 * 60 * 1000, 
+        maxAge: 24 * 60 * 60 * 1000,
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
@@ -41,12 +40,6 @@ const configureMiddleware = (app) => {
       name: 'sessionId',
     })
   );
-
-  app.use((req, _, next) => {
-    console.log('Session ID:', req.sessionID);
-    console.log('Session Data:', req.session);
-    next();
-  });
 };
 
 export default configureMiddleware;

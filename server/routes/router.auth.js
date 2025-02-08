@@ -12,6 +12,8 @@ import {
   resetPassword,
   refreshToken,
   checkAuth,
+  verifyEmail,
+  resendVerificationEmail,
 } from '../controllers/auth/controller.auth.js';
 
 const userRouter = express.Router();
@@ -24,6 +26,12 @@ userRouter.post(
   '/reset-password/:token',
   validateRequest('resetPassword'),
   resetPassword
+);
+userRouter.get('/verify-email/:token', verifyEmail);
+userRouter.post(
+  '/resend-verification',
+  validateRequest('email'),
+  resendVerificationEmail
 );
 
 // Protected routes (require authentication)

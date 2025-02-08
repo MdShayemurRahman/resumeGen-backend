@@ -9,6 +9,8 @@ import resumeRouter from './routes/router.resume.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import userRouter from './routes/router.auth.js';
 import { testEmailConfig } from './config/email.config.js';
+import { monitorUserUpdates } from './utils/userVerification.js';
+
 
 const app = express();
 
@@ -19,6 +21,7 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
 });
+
 app.use(limiter);
 
 configureMiddleware(app);
@@ -38,6 +41,7 @@ testEmailConfig().then((isConfigured) => {
   }
 });
 
+app.use(monitorUserUpdates);
 app.use(errorHandler);
 app.use((_, res) => {
   res.status(404).json({
