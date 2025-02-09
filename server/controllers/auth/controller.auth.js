@@ -98,13 +98,13 @@ export const register = async (req, res, next) => {
       },
     });
 
-    console.log("Verification user token", user.verificationToken);
+    console.log('Verification user token', user.verificationToken);
 
     await sendVerificationEmail(user.email, verificationToken);
 
     const token = createToken(user);
 
-    console.log("register user token: ", token);
+    console.log('register user token: ', token);
 
     res.cookie('token', token, {
       httpOnly: true,
@@ -244,13 +244,43 @@ export const getProfile = async (req, res, next) => {
 export const logout = async (req, res, next) => {
   try {
     const token = req.token;
-    await BlacklistedToken.create({ token: req.token });
-    res.clearCookie('token');
 
-    res.status(200).json({
-      status: 'success',
-      message: 'Logged out successfully',
+    // Add the token to the blacklist
+    await BlacklistedToken.create({ token });
+
+    // Clear the token cookie
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
     });
+
+    // Clear the sessionId cookie
+    res.clearCookie('sessionId', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+
+    // Destroy the session
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Error destroying session:', err);
+          return next(createError(500, 'Logout failed'));
+        }
+
+        res.status(200).json({
+          status: 'success',
+          message: 'Logged out successfully',
+        });
+      });
+    } else {
+      res.status(200).json({
+        status: 'success',
+        message: 'Logged out successfully',
+      });
+    }
   } catch (error) {
     next(error);
   }
