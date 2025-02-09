@@ -98,9 +98,13 @@ export const register = async (req, res, next) => {
       },
     });
 
+    console.log("Verification user token", user.verificationToken);
+
     await sendVerificationEmail(user.email, verificationToken);
 
     const token = createToken(user);
+
+    console.log("register user token: ", token);
 
     res.cookie('token', token, {
       httpOnly: true,
@@ -179,6 +183,8 @@ export const login = async (req, res, next) => {
 
     // Create token
     const token = createToken(updatedUser);
+
+    console.log('login user token: ', token);
 
     // Set cookie
     res.cookie('token', token, {

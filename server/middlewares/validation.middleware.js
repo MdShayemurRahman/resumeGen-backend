@@ -11,7 +11,7 @@ const validatePassword = (password) => {
 };
 
 export const validateRequest = (type) => {
-  return (req, res, next) => {
+  return (req, _, next) => {
     try {
       switch (type) {
         case 'register':
