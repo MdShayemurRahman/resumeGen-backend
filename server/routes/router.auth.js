@@ -1,4 +1,6 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
+
 import { validateRequest } from '../middlewares/validation.middleware.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 import {
@@ -17,6 +19,11 @@ import {
 } from '../controllers/auth/controller.auth.js';
 
 const userRouter = express.Router();
+
+const logoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+});
 
 // Public routes
 userRouter.post('/register', validateRequest('register'), register);
@@ -43,7 +50,7 @@ userRouter.post(
   validateRequest('changePassword'),
   changePassword
 );
-userRouter.post('/logout', logout);
+userRouter.post('/logout', logoutLimiter, logout);
 userRouter.post('/refresh-token', refreshToken);
 userRouter.get('/check-auth', checkAuth);
 
