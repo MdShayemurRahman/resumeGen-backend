@@ -1,10 +1,8 @@
-// controllers/resume/controller.resume.js
 import Resume from '../../models/resume.model.js';
+import User from '../../models/user.model.js';
 import { createError } from '../../utils/error.util.js';
 import LinkedInService from '../../services/linkedin.service.js';
-import User from '../../models/user.model.js';
 
-// Create a new resume
 export const createResume = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -15,7 +13,6 @@ export const createResume = async (req, res, next) => {
 
     const resume = await Resume.create(resumeData);
 
-    // Add resume reference to user
     await User.findByIdAndUpdate(userId, {
       $push: { resumes: resume._id },
     });
@@ -29,64 +26,57 @@ export const createResume = async (req, res, next) => {
   }
 };
 
-// Import resume from LinkedIn
-export const importFromLinkedIn = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user.id);
-    if (!user.linkedinId) {
-      throw createError(400, 'No LinkedIn account linked');
-    }
-
-    // Get fresh LinkedIn data
-    const accessToken = await LinkedInService.refreshAccessToken(user._id);
-    const profileData = await LinkedInService.getProfileData(accessToken);
-
-    // Create resume with LinkedIn data
-    const resumeData = {
-      user: user._id,
-      title: `${userInfoResponse.data.name}'s LinkedIn Resume`,
-      personalInfo: {
-        name: userInfoResponse.data.name,
-        jobTitle: profileResponse.data.headline?.localized?.en_US || '',
-        email: userInfoResponse.data.email,
-        profilePicture: userInfoResponse.data.picture,
-        linkedinUrl: profileResponse.data.vanityName
-          ? `https://www.linkedin.com/in/${profileResponse.data.vanityName}`
-          : null,
-      },
-      // Add other LinkedIn data as it becomes available with more scopes
-    };
-
-    const resume = await Resume.create(resumeData);
-
-    // Add resume reference to user
-    await User.findByIdAndUpdate(user._id, {
-      $push: { resumes: resume._id },
-    });
-
-    res.status(201).json({
-      status: 'success',
-      data: { resume },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Get all resumes for a user
 export const getUserResumes = async (req, res, next) => {
   try {
-    const resumes = await Resume.find({ user: req.user.id });
+    const { page = 1, limit = 10 } = req.query;
+    const { search, searchFields, filters } = req.query;
+
+    const query = { user: req.user.id };
+
+    if (search) {
+      const searchQuery = searchFields.map((field) => ({
+        [field]: { $regex: search, $options: 'i' },
+      }));
+      query.$or = searchQuery;
+    }
+
+    if (filters) {
+      if (filters.updatedAt) {
+        query.updatedAt = {
+          $gte: new Date(filters.updatedAt.startDate),
+          $lte: new Date(filters.updatedAt.endDate),
+        };
+      }
+      if (typeof filters.isPublic === 'boolean') {
+        query.isPublic = filters.isPublic;
+      }
+    }
+
+    const skip = (page - 1) * limit;
+    const resumes = await Resume.find(query)
+      .skip(skip)
+      .limit(limit)
+      .sort({ updatedAt: -1 });
+
+    const total = await Resume.countDocuments(query);
+
     res.json({
       status: 'success',
-      data: { resumes },
+      data: {
+        resumes,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      },
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Get a single resume
 export const getResume = async (req, res, next) => {
   try {
     const resume = await Resume.findOne({
@@ -107,7 +97,6 @@ export const getResume = async (req, res, next) => {
   }
 };
 
-// Update a resume
 export const updateResume = async (req, res, next) => {
   try {
     const resume = await Resume.findOneAndUpdate(
@@ -135,7 +124,6 @@ export const updateResume = async (req, res, next) => {
   }
 };
 
-// Delete a resume
 export const deleteResume = async (req, res, next) => {
   try {
     const resume = await Resume.findOneAndDelete({
@@ -154,6 +142,7 @@ export const deleteResume = async (req, res, next) => {
 
     res.json({
       status: 'success',
+      message: 'Resume deleted successfully',
       data: null,
     });
   } catch (error) {
@@ -161,7 +150,6 @@ export const deleteResume = async (req, res, next) => {
   }
 };
 
-// Get public resume by slug
 export const getPublicResume = async (req, res, next) => {
   try {
     const resume = await Resume.findOne({
@@ -174,6 +162,84 @@ export const getPublicResume = async (req, res, next) => {
     }
 
     res.json({
+      status: 'success',
+      data: { resume },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const importFromLinkedIn = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user.linkedinId) {
+      throw createError(400, 'No LinkedIn account linked');
+    }
+
+    const {
+      importEducation = true,
+      importExperience = true,
+      importSkills = true,
+      overwrite = false,
+    } = req.body;
+
+    const accessToken = await LinkedInService.refreshAccessToken(user._id);
+    const profileData = await LinkedInService.getProfileData(accessToken);
+
+    const resumeData = {
+      user: user._id,
+      title: `${profileData.name}'s LinkedIn Resume`,
+      personalInfo: {
+        name: profileData.name,
+        jobTitle: profileData.headline,
+        email: profileData.email,
+        profilePicture: profileData.pictureUrl,
+        linkedinUrl: profileData.publicProfileUrl,
+      },
+    };
+
+    if (importEducation && profileData.education) {
+      resumeData.education = profileData.education.map((edu) => ({
+        institution: edu.schoolName,
+        degree: edu.degree,
+        field: edu.fieldOfStudy,
+        startDate: edu.startDate,
+        endDate: edu.endDate,
+        current: !edu.endDate,
+      }));
+    }
+
+    if (importExperience && profileData.positions) {
+      resumeData.experience = profileData.positions.map((pos) => ({
+        title: pos.title,
+        company: pos.companyName,
+        location: pos.location,
+        startDate: pos.startDate,
+        endDate: pos.endDate,
+        current: pos.isCurrent,
+        description: pos.description,
+      }));
+    }
+
+    if (importSkills && profileData.skills) {
+      resumeData.skills = [
+        {
+          category: 'Professional Skills',
+          skills: profileData.skills.map((skill) => ({
+            name: skill.name,
+          })),
+        },
+      ];
+    }
+
+    const resume = await Resume.create(resumeData);
+
+    await User.findByIdAndUpdate(user._id, {
+      $push: { resumes: resume._id },
+    });
+
+    res.status(201).json({
       status: 'success',
       data: { resume },
     });

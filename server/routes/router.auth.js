@@ -19,32 +19,55 @@ import {
 
 const userRouter = express.Router();
 
-const logoutLimiter = rateLimit({
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
+  message: 'Too many attempts, please try again later',
 });
 
-// Public routes
-userRouter.post('/register', validateRequest('register'), register);
-userRouter.post('/login', validateRequest('login'), login);
+const emailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  message: 'Too many email requests, please try again later',
+});
+
+userRouter.post(
+  '/register',
+  authLimiter,
+  validateRequest('register'),
+  register
+);
+
+userRouter.post('/login', authLimiter, validateRequest('login'), login);
+
 userRouter.post(
   '/forgot-password',
+  emailLimiter,
   validateRequest('forgotPassword'),
   forgotPassword
 );
+
 userRouter.post(
   '/reset-password/:token',
+  authLimiter,
   validateRequest('resetPassword'),
   resetPassword
 );
-userRouter.get('/verify-email/:token', verifyEmail);
+
+userRouter.get(
+  '/verify-email/:token',
+  validateRequest('verifyEmail'),
+  verifyEmail
+);
+
 userRouter.post(
   '/resend-verification',
-  validateRequest('forgotPassword'),
+  emailLimiter,
+  validateRequest('forgotPassword'), // reusing email validation
   resendVerificationEmail
 );
 
-// Protected routes (require authentication)
+// Protected routes with validation
 userRouter.use(verifyToken);
 userRouter.get('/profile', getProfile);
 userRouter.put('/profile', validateRequest('updateProfile'), updateProfile);
@@ -53,7 +76,7 @@ userRouter.post(
   validateRequest('changePassword'),
   changePassword
 );
-userRouter.post('/logout', logoutLimiter, logout);
+userRouter.post('/logout', logout);
 userRouter.post('/refresh-token', refreshToken);
 userRouter.get('/check-auth', checkAuth);
 
