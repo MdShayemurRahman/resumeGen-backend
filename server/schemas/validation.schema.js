@@ -37,9 +37,21 @@ const dateSchema = z
 // Auth Schemas
 export const registerSchema = z.object({
   body: z.object({
-    email: emailSchema,
-    password: passwordSchema,
-    name: nameSchema,
+    email: z.string().email('Invalid email format').min(1, 'Email is required'),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters long')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number'),
+    name: z
+      .string()
+      .min(2, 'Name must be at least 2 characters long')
+      .max(100, 'Name must not exceed 100 characters')
+      .regex(
+        /^[a-zA-Z\s'-]+$/,
+        'Name can only contain letters, spaces, hyphens and apostrophes'
+      ),
   }),
 });
 

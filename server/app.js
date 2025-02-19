@@ -11,7 +11,6 @@ import userRouter from './routes/router.auth.js';
 import { testEmailConfig } from './config/email.config.js';
 import { monitorUserUpdates } from './utils/userVerification.js';
 
-
 const app = express();
 
 app.use(helmet());

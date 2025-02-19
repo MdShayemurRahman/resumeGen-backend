@@ -73,38 +73,26 @@ export const register = async (req, res, next) => {
   try {
     const { email, password, name } = req.body;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      throw createError(400, 'Email already registered');
-    }
-
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-
-    const hashedVerificationToken = crypto
-      .createHash('sha256')
-      .update(verificationToken)
-      .digest('hex');
-
     // Create user
     const user = await User.create({
       email,
       password,
       name,
       authType: 'local',
-      verificationToken: hashedVerificationToken,
+      verificationToken: crypto
+        .createHash('sha256')
+        .update(crypto.randomBytes(32).toString('hex'))
+        .digest('hex'),
       verificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
       profile: {
         bio: '',
       },
     });
 
-    console.log('Verification user token', user.verificationToken);
-
+    const verificationToken = crypto.randomBytes(32).toString('hex');
     await sendVerificationEmail(user.email, verificationToken);
 
     const token = createToken(user);
-
-    console.log('register user token: ', token);
 
     res.cookie('token', token, {
       httpOnly: true,
@@ -123,7 +111,6 @@ export const register = async (req, res, next) => {
           email: user.email,
           name: user.name,
           isEmailVerified: user.isEmailVerified,
-          // For testing only:
           verificationToken: verificationToken,
         },
       },
