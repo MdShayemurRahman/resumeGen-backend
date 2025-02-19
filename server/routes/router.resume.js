@@ -1,6 +1,6 @@
-// routes/router.resume.js
 import express from 'express';
 import { verifyToken } from '../middlewares/auth.middleware.js';
+import { validateRequest } from '../middlewares/validation.middleware.js';
 import {
   createResume,
   importFromLinkedIn,
@@ -19,11 +19,11 @@ resumeRouter.get('/public/:slug', getPublicResume);
 // Protected routes
 resumeRouter.use(verifyToken);
 
-resumeRouter.post('/', createResume);
+resumeRouter.post('/', validateRequest('createResume'), createResume);
 resumeRouter.post('/import-linkedin', importFromLinkedIn);
 resumeRouter.get('/', getUserResumes);
 resumeRouter.get('/:id', getResume);
-resumeRouter.put('/:id', updateResume);
+resumeRouter.put('/:id', validateRequest('updateResume'), updateResume);
 resumeRouter.delete('/:id', deleteResume);
 
 export default resumeRouter;

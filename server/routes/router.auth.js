@@ -1,6 +1,5 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-
 import { validateRequest } from '../middlewares/validation.middleware.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 import {
@@ -28,7 +27,11 @@ const logoutLimiter = rateLimit({
 // Public routes
 userRouter.post('/register', validateRequest('register'), register);
 userRouter.post('/login', validateRequest('login'), login);
-userRouter.post('/forgot-password', validateRequest('email'), forgotPassword);
+userRouter.post(
+  '/forgot-password',
+  validateRequest('forgotPassword'),
+  forgotPassword
+);
 userRouter.post(
   '/reset-password/:token',
   validateRequest('resetPassword'),
@@ -37,7 +40,7 @@ userRouter.post(
 userRouter.get('/verify-email/:token', verifyEmail);
 userRouter.post(
   '/resend-verification',
-  validateRequest('email'),
+  validateRequest('forgotPassword'),
   resendVerificationEmail
 );
 

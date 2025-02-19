@@ -1,6 +1,6 @@
 // services/linkedin.service.js
 import axios from 'axios';
-import User from '../models/User/user.model.js';
+import User from '../models/user.model.js';
 
 const LINKEDIN_API = {
   AUTH_URL: 'https://www.linkedin.com/oauth/v2/authorization',

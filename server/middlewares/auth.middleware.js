@@ -1,9 +1,7 @@
-// In auth.middleware.js
-
 import jwt from 'jsonwebtoken';
 import { createError } from '../utils/error.util.js';
-import User from '../models/User/user.model.js';
-import BlacklistedToken from '../models/BlacklistedToken/blacklistedToken.model.js';
+import User from '../models/user.model.js';
+import BlacklistedToken from '../models/blacklistedToken.model.js';
 
 export const verifyToken = async (req, res, next) => {
   try {

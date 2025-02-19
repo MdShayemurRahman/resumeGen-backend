@@ -1,8 +1,8 @@
 // controllers/resume/controller.resume.js
-import Resume from '../../models/Resume/resume.model.js';
+import Resume from '../../models/resume.model.js';
 import { createError } from '../../utils/error.util.js';
 import LinkedInService from '../../services/linkedin.service.js';
-import User from '../../models/User/user.model.js';
+import User from '../../models/user.model.js';
 
 // Create a new resume
 export const createResume = async (req, res, next) => {

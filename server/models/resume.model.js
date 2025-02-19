@@ -10,7 +10,7 @@ import {
   certificationSchema,
   referenceSchema,
   resumeMetadataSchema,
-} from './schemas/resume.schema.js';
+} from '../schemas/resume.schema.js';
 
 const resumeSchema = new mongoose.Schema(
   {

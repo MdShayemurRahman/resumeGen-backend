@@ -1,7 +1,7 @@
 // controllers/auth/controller.linkedin.js
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
-import User from '../../models/User/user.model.js';
+import User from '../../models/user.model.js';
 import { createError } from '../../utils/error.util.js';
 
 const LINKEDIN_API = {

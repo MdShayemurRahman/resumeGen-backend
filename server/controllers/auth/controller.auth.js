@@ -2,13 +2,13 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
-import User from '../../models/User/user.model.js';
+import User from '../../models/user.model.js';
 import { createError } from '../../utils/error.util.js';
 import {
   sendResetPasswordEmail,
   sendVerificationEmail,
 } from '../../utils/email.util.js';
-import BlacklistedToken from '../../models/BlacklistedToken/blacklistedToken.model.js';
+import BlacklistedToken from '../../models/blacklistedToken.model.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 

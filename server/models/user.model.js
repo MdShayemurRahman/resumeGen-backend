@@ -7,11 +7,11 @@ import {
   securitySchema,
   profileSchema,
   professionalInfoSchema,
-} from './schemas/user.schema.js';
+} from '../schemas/user.schema.js';
 import {
   preSaveMiddleware,
   postSaveMiddleware,
-} from './middleware/user.middleware.js';
+} from '../middlewares/user.middleware.js';
 
 const userSchema = new mongoose.Schema(
   {
